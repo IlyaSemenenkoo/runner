@@ -36,7 +36,10 @@ public class PlayerMove : MonoBehaviour
     private Rigidbody _rb;
     private Animator _animator;
     [SerializeField] private GameObject player;
-    [SerializeField]private ScoreCounter _scoreCounter;
+    [SerializeField] private ScoreCounter _scoreCounter;
+    [SerializeField] private FirestoreManager _fireStore;
+
+    private Vector2 _touchStartPosition; // Start position of touch for swipe detection
 
     private void Awake()
     {
@@ -59,7 +62,6 @@ public class PlayerMove : MonoBehaviour
 
         _lastZPosition = transform.position.z; // Initialize the last Z position
     }
-    
 
     private void Update()
     {
@@ -75,32 +77,97 @@ public class PlayerMove : MonoBehaviour
                 _lastZPosition = transform.position.z; // Update the last position
             }
 
-            // Input handling
-            if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A))
-            {
-                MoveLeft();
-            }
-            else if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D))
-            {
-                MoveRight();
-            }
-            else if (Input.GetKeyDown(KeyCode.Space))
-            {
-                Jump();
-            }
-            else if (Input.GetKeyDown(KeyCode.S))
-            {
-                Roll();
-            }
+            // Mobile touch controls
+            HandleMobileInput();
 
             // Smooth movement between lanes
             Vector3 desiredPosition = new Vector3(_targetPosition.x, transform.position.y, transform.position.z);
             transform.position = Vector3.Lerp(transform.position, desiredPosition, Time.deltaTime * _laneChangeSpeed);
+
+            // Update score
             if (_scoreCounter.isActiveAndEnabled)
             {
                 _scoreCounter.Score = (int)transform.position.z + 10;
             }
-            
+        }
+    }
+
+    private void HandleMobileInput()
+    {
+        if (Input.touchCount > 0) // Check if there's at least one touch
+        {
+            Touch touch = Input.GetTouch(0); // Get the first touch
+
+            if (touch.phase == TouchPhase.Began) // If the touch just started
+            {
+                // Store the starting position for swipe detection
+                _touchStartPosition = touch.position;
+            }
+
+            if (touch.phase == TouchPhase.Moved) // If the touch is moving
+            {
+                // Detect swipe for moving left or right
+                if (touch.position.x < Screen.width / 3) // Left side of the screen
+                {
+                    MoveLeft();
+                }
+                else if (touch.position.x > Screen.width * 2 / 3) // Right side of the screen
+                {
+                    MoveRight();
+                }
+
+                // Detect swipe up for jumping
+                if (touch.position.y > _touchStartPosition.y + 100) // Swipe up (threshold 100 units)
+                {
+                    Jump();
+                }
+
+                // Detect swipe down for sliding
+                if (touch.position.y < _touchStartPosition.y - 100) // Swipe down (threshold 100 units)
+                {
+                    Slide();
+                }
+            }
+
+            if (touch.phase == TouchPhase.Ended) // If the touch has ended
+            {
+                // Detect tap in the center of the screen for jump
+                if (touch.position.x > Screen.width / 3 && touch.position.x < Screen.width * 2 / 3)
+                {
+                    Jump();
+                }
+            }
+        }
+    }
+
+    private void Jump()
+    {
+        if (_isGrounded)
+        {
+            Debug.Log("Jumping...");
+            _rb.velocity = new Vector3(_rb.velocity.x, 0, _rb.velocity.z); // Reset vertical velocity
+            _rb.AddForce(Vector3.up * _jumpForce, ForceMode.Impulse);      // Apply upward impulse
+            _animator.SetTrigger("Jump");                                 // Trigger jump animation
+        }
+        else
+        {
+            Debug.Log("Cannot jump, not grounded.");
+        }
+    }
+
+    private void Slide()
+    {
+        if (!_isRolling && _isGrounded)
+        {
+            _isRolling = true;
+            _animator.SetTrigger("Roll");
+
+            // Reduce Capsule Collider size for the roll
+            AdjustCapsuleCollider(height: _originalHeight * 0.5f, center: new Vector3(_originalCenter.x, _originalCenter.y - 0.5f, _originalCenter.z));
+
+            // Return to the original values after the roll
+            Invoke(nameof(ResetCapsuleCollider), _rollDuration);
+            _isRolling = false;
         }
     }
 
@@ -113,16 +180,6 @@ public class PlayerMove : MonoBehaviour
 
         // Debug ray
         Debug.DrawRay(rayOrigin, Vector3.down * rayLength, _isGrounded ? Color.green : Color.red);
-
-        // Display information
-        if (_isGrounded)
-        {
-            Debug.Log("Player is grounded.");
-        }
-        else
-        {
-            Debug.Log("Player is not grounded.");
-        }
     }
 
     private void MoveLeft()
@@ -140,21 +197,6 @@ public class PlayerMove : MonoBehaviour
         {
             _currentLane++;
             _targetPosition.x = _lanes[_currentLane];
-        }
-    }
-
-    private void Jump()
-    {
-        if (_isGrounded)
-        {
-            Debug.Log("Jumping...");
-            _rb.velocity = new Vector3(_rb.velocity.x, 0, _rb.velocity.z); // Reset vertical velocity
-            _rb.AddForce(Vector3.up * _jumpForce, ForceMode.Impulse);      // Apply upward impulse
-            _animator.SetTrigger("Jump");                                 // Trigger jump animation
-        }
-        else
-        {
-            Debug.Log("Cannot jump, not grounded.");
         }
     }
 
@@ -199,6 +241,7 @@ public class PlayerMove : MonoBehaviour
             Debug.Log("trigger");
             _animator.SetTrigger("hit");
             _canMove = false;
+            _fireStore.UpdateHighScore(_scoreCounter.Score);
         }
     }
 
