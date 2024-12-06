@@ -4,15 +4,16 @@ using UnityEngine;
 public class UIManager : MonoBehaviour
 {
     [SerializeField] private GameObject _leaderBoardScreen;
-    [SerializeField] private GameObject _authorizationScreen;
     [SerializeField] private GameObject _mainMenuScreen;
     [SerializeField] private GameObject _scoreScreen;
     [SerializeField] private PlayerMove playerMove;
+    private FirebaseAuthManager firebaseAuthManager;
 
     private void Awake()
     {
-        _mainMenuScreen.SetActive(false);
+        _mainMenuScreen.SetActive(true);
         _scoreScreen.SetActive(false);
+        firebaseAuthManager = GetComponent<FirebaseAuthManager>();
     }
 
     public void StartMove()
@@ -39,16 +40,9 @@ public class UIManager : MonoBehaviour
         _mainMenuScreen.SetActive(true);
     }
 
-    public void AuthComplite()
-    {
-        Debug.Log("ui");
-        _authorizationScreen.SetActive(false);
-        _mainMenuScreen.SetActive(true);
-    }
-
     public void LogOut()
     {
-        _authorizationScreen.SetActive(true);
-        _mainMenuScreen.SetActive(false);
+        firebaseAuthManager.Logout();
+        UnityEngine.SceneManagement.SceneManager.LoadScene("LoginScene");
     }
 }
