@@ -3,6 +3,7 @@ using Firebase;
 using Firebase.Auth;
 using TMPro;
 using System.Collections;
+using UnityEngine.SceneManagement;
 
 
 public class FirebaseAuthManager : MonoBehaviour
@@ -28,7 +29,6 @@ public class FirebaseAuthManager : MonoBehaviour
 
     private void Start()
     {
-        DontDestroyOnLoad(this);
         StartCoroutine(CheckAndFixDependenciesAsync());
     }
 
@@ -103,7 +103,7 @@ public class FirebaseAuthManager : MonoBehaviour
         if(User != null)
         {
             //this.userName = User.DisplayName;
-            UnityEngine.SceneManagement.SceneManager.LoadScene("GameScene");
+            Registration.instance.AuthComplite();
         }
         else
         {
@@ -116,6 +116,7 @@ public class FirebaseAuthManager : MonoBehaviour
         if(auth != null && User != null)
         {
             auth.SignOut();
+            SceneManager.LoadScene("GameScene");
         }
     }
 
@@ -169,6 +170,7 @@ public class FirebaseAuthManager : MonoBehaviour
             Debug.LogFormat("User signed in successfully: {0} ({1})", User.DisplayName, User.Email);
             warmingLoginText.text = "";
             confirmLoginText.text = "Logged In";
+            Registration.instance.AuthComplite();
             StartCoroutine(firestoreManager.LoadUserData(User.UserId));
         }
     }
@@ -240,8 +242,8 @@ public class FirebaseAuthManager : MonoBehaviour
                     {
                         warningRegisterText.text = "";
                     }
-
-                    StartCoroutine(firestoreManager.SaveUserData(_username, _email, _password, 0));
+                    Registration.instance.AuthComplite();
+                    StartCoroutine(firestoreManager.SaveUserData(User.UserId, _email, _username, 0));
                 }
             }
         }

@@ -1,14 +1,15 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class ScoreCounter : MonoBehaviour
 {
     private int _score = 0;
-    private TextMeshProUGUI _txt;
+    private Text _txt;
 
     private void Awake()
     {
-        _txt = GetComponent<TextMeshProUGUI>();
+        _txt = GetComponent<Text>();
     }
 
     private void Update()

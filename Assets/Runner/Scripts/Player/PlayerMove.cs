@@ -17,6 +17,7 @@ public class PlayerMove : MonoBehaviour
     [SerializeField] private float _jumpForce = 5f; // Jump force
     [SerializeField] private LayerMask _groundLayer; // Layer for ground detection
     private bool _isGrounded; // Is the player on the ground
+    private bool _isFirst = false;
 
     [Header("Roll Settings")]
     [SerializeField] private float _rollDuration = 0.5f; // Duration of the roll
@@ -29,7 +30,7 @@ public class PlayerMove : MonoBehaviour
 
     [Header("Lane Settings")]
     private int _currentLane = 1; // Current lane: 0 = left, 1 = center, 2 = right
-    private float[] _lanes = { LevelBoundary._leftSide, LevelBoundary._center, LevelBoundary._rightSide }; // Coordinates of the lanes on the X-axis
+    private readonly float[] _lanes = { LevelBoundary._leftSide, LevelBoundary._center, LevelBoundary._rightSide }; // Coordinates of the lanes on the X-axis
     private Vector3 _targetPosition; // Target position for lane changing
 
     [Header("Components")]
@@ -39,7 +40,8 @@ public class PlayerMove : MonoBehaviour
     [SerializeField] private ScoreCounter _scoreCounter;
     [SerializeField] private FirestoreManager _fireStore;
 
-    private Vector2 _touchStartPosition; // Start position of touch for swipe detection
+    private Vector2 _startTouchPosition, _endTouchPosition, _currentSwipe; // Start position of touch for swipe detection
+    private float _minSwipeDistance = 50f;
 
     private void Awake()
     {
@@ -78,7 +80,7 @@ public class PlayerMove : MonoBehaviour
             }
 
             // Mobile touch controls
-            HandleMobileInput();
+            DetectSwipe();
 
             // Smooth movement between lanes
             Vector3 desiredPosition = new Vector3(_targetPosition.x, transform.position.y, transform.position.z);
@@ -92,49 +94,57 @@ public class PlayerMove : MonoBehaviour
         }
     }
 
-    private void HandleMobileInput()
+    private void DetectSwipe()
     {
-        if (Input.touchCount > 0) // Check if there's at least one touch
+        // Для сенсорных устройств
+        if (Input.touchCount > 0)
         {
-            Touch touch = Input.GetTouch(0); // Get the first touch
+            Touch touch = Input.GetTouch(0);
 
-            if (touch.phase == TouchPhase.Began) // If the touch just started
+            if (touch.phase == TouchPhase.Began)
             {
-                // Store the starting position for swipe detection
-                _touchStartPosition = touch.position;
+                _startTouchPosition = touch.position;
             }
-
-            if (touch.phase == TouchPhase.Moved) // If the touch is moving
+            else if (touch.phase == TouchPhase.Ended)
             {
-                // Detect swipe for moving left or right
-                if (touch.position.x < Screen.width / 3) // Left side of the screen
+                _endTouchPosition = touch.position;
+                CheckSwipe();
+            }
+        }
+    }
+
+    private void CheckSwipe()
+    {
+        float distance = Vector2.Distance(_startTouchPosition, _endTouchPosition);
+        if (distance >= _minSwipeDistance)
+        {
+            Vector2 direction = _endTouchPosition - _startTouchPosition;
+            Vector2 normalizedDirection = direction.normalized;
+
+            if (Mathf.Abs(normalizedDirection.x) > Mathf.Abs(normalizedDirection.y))
+            {
+                if (normalizedDirection.x > 0)
                 {
-                    MoveLeft();
-                }
-                else if (touch.position.x > Screen.width * 2 / 3) // Right side of the screen
-                {
+                    Debug.Log("Swipe Right");
                     MoveRight();
                 }
-
-                // Detect swipe up for jumping
-                if (touch.position.y > _touchStartPosition.y + 100) // Swipe up (threshold 100 units)
+                else
                 {
-                    Jump();
-                }
-
-                // Detect swipe down for sliding
-                if (touch.position.y < _touchStartPosition.y - 100) // Swipe down (threshold 100 units)
-                {
-                    Slide();
+                    Debug.Log("Swipe Left");
+                    MoveLeft();
                 }
             }
-
-            if (touch.phase == TouchPhase.Ended) // If the touch has ended
+            else
             {
-                // Detect tap in the center of the screen for jump
-                if (touch.position.x > Screen.width / 3 && touch.position.x < Screen.width * 2 / 3)
+                if (normalizedDirection.y > 0)
                 {
+                    Debug.Log("Swipe Up");
                     Jump();
+                }
+                else
+                {
+                    Debug.Log("Swipe Down");
+                    Slide();
                 }
             }
         }
@@ -142,7 +152,7 @@ public class PlayerMove : MonoBehaviour
 
     private void Jump()
     {
-        if (_isGrounded)
+        if (_isGrounded && _isFirst)
         {
             Debug.Log("Jumping...");
             _rb.velocity = new Vector3(_rb.velocity.x, 0, _rb.velocity.z); // Reset vertical velocity
@@ -151,6 +161,7 @@ public class PlayerMove : MonoBehaviour
         }
         else
         {
+            _isFirst = true;
             Debug.Log("Cannot jump, not grounded.");
         }
     }
@@ -199,23 +210,6 @@ public class PlayerMove : MonoBehaviour
             _targetPosition.x = _lanes[_currentLane];
         }
     }
-
-    private void Roll()
-    {
-        if (!_isRolling && _isGrounded)
-        {
-            _isRolling = true;
-            _animator.SetTrigger("Roll");
-
-            // Reduce Capsule Collider size for the roll
-            AdjustCapsuleCollider(height: _originalHeight * 0.5f, center: new Vector3(_originalCenter.x, _originalCenter.y - 0.5f, _originalCenter.z));
-
-            // Return to the original values after the roll
-            Invoke(nameof(ResetCapsuleCollider), _rollDuration);
-            _isRolling = false;
-        }
-    }
-
     private void AdjustCapsuleCollider(float height, Vector3 center)
     {
         if (_capsuleCollider != null)
@@ -241,7 +235,7 @@ public class PlayerMove : MonoBehaviour
             Debug.Log("trigger");
             _animator.SetTrigger("hit");
             _canMove = false;
-            _fireStore.UpdateHighScore(_scoreCounter.Score);
+            StartCoroutine(_fireStore.UpdateHighScore(_scoreCounter.Score));
         }
     }
 

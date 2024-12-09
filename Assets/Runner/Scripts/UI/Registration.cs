@@ -1,4 +1,3 @@
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -10,9 +9,11 @@ public class Registration : MonoBehaviour
     [SerializeField] private Button registerButton;
     [SerializeField] private Button loginButton;
     public static Registration instance;
+    [SerializeField]private GameObject _mainMune;
 
     private void Awake()
     {
+        _mainMune.gameObject.SetActive(false);
         registerWindow.SetActive(false);
         loginWindow.SetActive(false);
         backButton.gameObject.SetActive(false);
@@ -50,5 +51,11 @@ public class Registration : MonoBehaviour
         backButton.gameObject.SetActive(true);
         registerButton.gameObject.SetActive(false);
         loginButton.gameObject.SetActive(false);
+    }
+
+    public void AuthComplite()
+    {
+        this.gameObject.SetActive(false);
+        _mainMune.SetActive(true);
     }
 }
