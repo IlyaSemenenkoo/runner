@@ -16,7 +16,8 @@ public class UIManager : MonoBehaviour
     [SerializeField] private FirebaseAuthManager _firebaseAuthManager;
     [SerializeField] private FirestoreManager _firestoreManager;
     [SerializeField] private GameObject _register;
-    private QuerySnapshot _snapshot;
+    [SerializeField] private GameObject _deadScreen;
+    [SerializeField] private AdMobReward _reward;
     
 
     private void Awake()
@@ -63,11 +64,20 @@ public class UIManager : MonoBehaviour
 
     public void End()
     {
+        _deadScreen.SetActive(false);
         SceneManager.LoadScene("GameScene");
     }
 
     public void WatchAds()
     {
-
+        Debug.Log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        _reward.ShowRewardedAd();
+        _playerMove.Continue();
+        _deadScreen.SetActive(false);
+    }
+    
+    public void Hit()
+    {
+        _deadScreen.SetActive(true);
     }
 }

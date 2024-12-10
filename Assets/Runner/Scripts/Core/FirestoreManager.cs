@@ -7,6 +7,7 @@ using System.Linq;
 using System;
 using System.Collections;
 using UnityEngine.UI;
+using TMPro;
 
 
 
@@ -18,7 +19,9 @@ public class FirestoreManager : MonoBehaviour
     private int _highScore;
     [SerializeField] private Text[] scoreArray;
     [SerializeField] private Text[] nameArray;
-    [SerializeField] private Text _yourBestScore;
+    [SerializeField] private TextMeshProUGUI _yourBestScore;
+    private string email;
+    private bool search = false;
 
     void Awake()
     {
@@ -49,37 +52,6 @@ public class FirestoreManager : MonoBehaviour
         if (regTask.Exception != null)
         {
             Debug.LogError("Failed to save user data: " + regTask.Exception?.Message);
-        }
-    }
-  
-    public IEnumerator LoadUserData(string userId)
-    {
-        var usersRef = _firestore.Collection("users");
-        var userDoc = usersRef.Document(userId);
-
-        var docTask = userDoc.GetSnapshotAsync();
-
-        yield return new WaitUntil(() => docTask.IsCompleted);
-
-        if (docTask.IsCanceled || docTask.IsFaulted)
-        {
-            Debug.LogError("Failed to load user data: " + docTask.Exception?.Message);
-            StopCoroutine(LoadUserData(userId));
-        }
-
-        DocumentSnapshot doc = docTask.Result;
-        if (doc.Exists)
-        {
-            string email = doc.GetValue<string>("email");
-            string login = doc.GetValue<string>("login");
-            int highscore = doc.GetValue<int>("highscore");
-
-            // Используйте полученные данные
-            Debug.Log($"User data loaded: Email = {email}, Login = {login}, Highscore = {highscore}");
-        }
-        else
-        {
-            Debug.LogError("User document not found.");
         }
     }
 
@@ -143,35 +115,41 @@ public class FirestoreManager : MonoBehaviour
 
     }
 
-    public async Task<String> GetUserByLogin(string login)
+    public string GetEmail(string login)
     {
-        try
+        if (!search)
         {
-            // Шаг 1: Поиск пользователя по логину
-            var usersRef = _firestore.Collection("users");
-            var query = usersRef.WhereEqualTo("login", login).Limit(1);
-            QuerySnapshot snapshot = await query.GetSnapshotAsync();
+            StartCoroutine(GetUserByLogin(login));
+        }
+        return email;
+    }
 
-            if (snapshot.Count > 0)
+    private IEnumerator GetUserByLogin(string login)
+    {
+        search = true;
+        Query query = _firestore.Collection("users").WhereEqualTo("login", login).Limit(1);
+        var queryTask = query.GetSnapshotAsync();
+        yield return new WaitUntil(predicate: ()  => queryTask.IsCompleted);
+        QuerySnapshot snapshots = queryTask.Result;
+        if (snapshots != null)
+        {
+            foreach (var doc in snapshots)
             {
-                // Берём первый документ из результата
-                DocumentSnapshot doc = snapshot.Documents.FirstOrDefault();
                 if (doc != null)
                 {
-                    return doc.GetValue<string>("email");                
-                }
-            }
-            else
-            {
-                Debug.LogError("User not found with this login.");
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError("Error in GetUserByLogin: " + ex.Message);
-        }
+                    if (doc.GetValue<string>("login") == login)
+                    {
+                        email = doc.GetValue<string>("email");
+                        search = false;
+                    }
 
-        return null; // Возврат null в случае ошибки
+                }
+                else
+                {
+                    Debug.LogError("User not found with this login.");
+                }
+            } 
+        }
     }
 
     public IEnumerator GetTop10Leaderboard()
@@ -235,7 +213,7 @@ public class FirestoreManager : MonoBehaviour
                 if (snapshot.Exists)
                 {
                     _highScore = snapshot.GetValue<int>("highScore");
-                    _yourBestScore.text = "Your best score : " + _highScore;
+                    _yourBestScore.text = "YOUR BEST SCORE : " + _highScore;
                 }
                 else
                 {

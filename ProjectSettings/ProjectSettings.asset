@@ -141,7 +141,10 @@ PlayerSettings:
   visionOSBundleVersion: 1.0
   tvOSBundleVersion: 1.0
   bundleVersion: 1.0.2
-  preloadedAssets: []
+  preloadedAssets:
+  - {fileID: -2311765097619199652, guid: 6c8765641ec1aa84f9e11081599816c8, type: 2}
+  - {fileID: 11400000, guid: 7bb9146b6f07f0c4ab2547a64ac27e23, type: 2}
+  - {fileID: 11400000, guid: 16c250f19d00e1b47ac37b7af384cd84, type: 2}
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -177,7 +180,7 @@ PlayerSettings:
   stripEngineCode: 1
   iPhoneStrippingLevel: 0
   iPhoneScriptCallOptimization: 0
-  ForceInternetPermission: 0
+  ForceInternetPermission: 1
   ForceSDCardPermission: 0
   CreateWallpaper: 0
   APKExpansionFiles: 0
@@ -259,7 +262,7 @@ PlayerSettings:
   useCustomBaseGradleTemplate: 0
   useCustomGradlePropertiesTemplate: 1
   useCustomGradleSettingsTemplate: 1
-  useCustomProguardFile: 0
+  useCustomProguardFile: 1
   AndroidTargetArchitectures: 3
   AndroidTargetDevices: 0
   AndroidSplashScreenScale: 0

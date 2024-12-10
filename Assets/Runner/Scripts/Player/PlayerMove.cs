@@ -39,6 +39,7 @@ public class PlayerMove : MonoBehaviour
     [SerializeField] private GameObject player;
     [SerializeField] private ScoreCounter _scoreCounter;
     [SerializeField] private FirestoreManager _fireStore;
+    [SerializeField] private UIManager _uiManager;
 
     private Vector2 _startTouchPosition, _endTouchPosition, _currentSwipe; // Start position of touch for swipe detection
     private float _minSwipeDistance = 50f;
@@ -77,6 +78,7 @@ public class PlayerMove : MonoBehaviour
             {
                 _speedScale += _speedIncreasePercentage; // Increase speed by 10%
                 _lastZPosition = transform.position.z; // Update the last position
+                _animator.speed = 1 + _speedScale / 10;
             }
 
             // Mobile touch controls
@@ -168,8 +170,9 @@ public class PlayerMove : MonoBehaviour
 
     private void Slide()
     {
-        if (!_isRolling && _isGrounded)
+        if (!_isRolling )
         {
+
             _isRolling = true;
             _animator.SetTrigger("Roll");
 
@@ -235,11 +238,18 @@ public class PlayerMove : MonoBehaviour
             Debug.Log("trigger");
             _animator.SetTrigger("hit");
             _canMove = false;
+            _uiManager.Hit();
             StartCoroutine(_fireStore.UpdateHighScore(_scoreCounter.Score));
+            other.gameObject.SetActive(false);
         }
     }
 
     public void StartMove()
+    {
+        _animator.SetTrigger("start");
+        _canMove = true;
+    }
+    public void Continue()
     {
         _animator.SetTrigger("start");
         _canMove = true;

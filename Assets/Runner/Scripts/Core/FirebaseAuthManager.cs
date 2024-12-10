@@ -122,8 +122,8 @@ public class FirebaseAuthManager : MonoBehaviour
 
     public void LoginButton()
     {
-        string email = firestoreManager.GetUserByLogin(loginLoginField.text).Result;
-        StartCoroutine(Login(email, passwordLoginField.text));
+        
+        StartCoroutine(Login(loginLoginField.text, passwordLoginField.text));
     }
 
     public void RegisterButton()
@@ -131,9 +131,14 @@ public class FirebaseAuthManager : MonoBehaviour
         StartCoroutine(Register(emailRegisterField.text, passwordRegisterField.text, loginRegisterField.text));
     }
 
-    private IEnumerator Login(string email, string password)
+    private IEnumerator Login(string login, string password)
     {
+
+        yield return new WaitUntil(predicate: () => firestoreManager.GetEmail(login)  != null);
+         var email = firestoreManager.GetEmail(login);
+
         var LoginTask = auth.SignInWithEmailAndPasswordAsync(email, password);
+        
 
         yield return new WaitUntil(predicate: () => LoginTask.IsCompleted);
 
@@ -171,7 +176,6 @@ public class FirebaseAuthManager : MonoBehaviour
             warmingLoginText.text = "";
             confirmLoginText.text = "Logged In";
             Registration.instance.AuthComplite();
-            StartCoroutine(firestoreManager.LoadUserData(User.UserId));
         }
     }
 
