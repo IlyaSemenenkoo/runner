@@ -1,4 +1,6 @@
+using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class Registration : MonoBehaviour
@@ -9,11 +11,21 @@ public class Registration : MonoBehaviour
     [SerializeField] private Button registerButton;
     [SerializeField] private Button loginButton;
     public static Registration instance;
-    [SerializeField]private GameObject _mainMune;
+    [Header("Login")]
+    [SerializeField] private TMP_InputField loginLoginField;
+    [SerializeField] private TMP_InputField passwordLoginField;
+    [SerializeField] private TMP_Text warmingLoginText;
+    [SerializeField] private TMP_Text confirmLoginText;
+
+    [Header("Register")]
+    [SerializeField] private TMP_InputField loginRegisterField;
+    [SerializeField] private TMP_InputField emailRegisterField;
+    [SerializeField] private TMP_InputField passwordRegisterField;
+    [SerializeField] private TMP_InputField passwordRegisterVerifyField;
+    [SerializeField] private TMP_Text warningRegisterText;
 
     private void Awake()
     {
-        _mainMune.gameObject.SetActive(false);
         registerWindow.SetActive(false);
         loginWindow.SetActive(false);
         backButton.gameObject.SetActive(false);
@@ -45,6 +57,16 @@ public class Registration : MonoBehaviour
         loginButton.gameObject.SetActive(false);
     }
 
+    public void LoginButton()
+    {
+        FirebaseAuthManager.instance.LoginButton(loginLoginField.text, passwordLoginField.text);
+    }
+
+    public void RegisterButton()
+    {
+        FirebaseAuthManager.instance.RegisterButton(emailRegisterField.text, passwordRegisterField.text, loginRegisterField.text, passwordRegisterVerifyField.text);
+    }
+
     public void Register()
     {
         registerWindow.SetActive(true);
@@ -55,7 +77,21 @@ public class Registration : MonoBehaviour
 
     public void AuthComplite()
     {
-        this.gameObject.SetActive(false);
-        _mainMune.SetActive(true);
+        SceneManager.LoadScene("GameScene");
+    }
+
+    public void WarmingLogin(string warming)
+    {
+        warmingLoginText.text = warming;
+    }
+
+    public void ConfirmLogin(string confirm)
+    {
+        warmingLoginText.text = confirm;
+    }
+
+    public void WarmingReg(string warming)
+    {
+        warningRegisterText.text = warming;
     }
 }

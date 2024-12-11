@@ -1,4 +1,4 @@
-using Firebase.Firestore;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -12,10 +12,7 @@ public class UIManager : MonoBehaviour
     [SerializeField] private PlayerMove _playerMove;
     [SerializeField] private Text[] scoreArray;
     [SerializeField] private Text[] nameArray;
-    [SerializeField] private Text _yourBestScore;
-    [SerializeField] private FirebaseAuthManager _firebaseAuthManager;
-    [SerializeField] private FirestoreManager _firestoreManager;
-    [SerializeField] private GameObject _register;
+    [SerializeField] private TextMeshProUGUI _yourBestScore;
     [SerializeField] private GameObject _deadScreen;
     [SerializeField] private AdMobReward _reward;
     
@@ -40,8 +37,8 @@ public class UIManager : MonoBehaviour
 
     public void LeaderBoard()
     {
-        StartCoroutine(_firestoreManager.GetTop10Leaderboard());
-        StartCoroutine(_firestoreManager.GetCurrentUserHighScore());
+        FirestoreManager.instance.GetTop(nameArray, scoreArray);
+        FirestoreManager.instance.GetUserScore(_yourBestScore);
         _leaderBoardScreen.SetActive(true);
         _mainMenuScreen.SetActive(false); 
     }
@@ -59,7 +56,7 @@ public class UIManager : MonoBehaviour
 
     public void LogOut()
     {
-        _firebaseAuthManager.Logout();
+        FirebaseAuthManager.instance.Logout();
     }
 
     public void End()
@@ -70,7 +67,6 @@ public class UIManager : MonoBehaviour
 
     public void WatchAds()
     {
-        Debug.Log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
         _reward.ShowRewardedAd();
         _playerMove.Continue();
         _deadScreen.SetActive(false);

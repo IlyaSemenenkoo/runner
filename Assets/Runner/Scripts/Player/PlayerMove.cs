@@ -3,7 +3,7 @@ using UnityEngine;
 public class PlayerMove : MonoBehaviour
 {
     [Header("Movement Settings")]
-    private float _forwardSpeed = 5f; // Initial speed of forward movement
+    [SerializeField] private float _forwardSpeed = 5f; // Initial speed of forward movement
     private float _laneChangeSpeed = 7f; // Speed of lane changing
     private bool _canMove = false;
     private string _obstacleTag = "Obstacle";
@@ -14,7 +14,8 @@ public class PlayerMove : MonoBehaviour
     private float _speedIncreasePercentage = 0.2f; // Speed increase percentage (10%)
 
     [Header("Jump Settings")]
-    [SerializeField] private float _jumpForce = 5f; // Jump force
+    [SerializeField] private float _jumpForce = 5f;// Jump force
+    [SerializeField] private float _jumpDuration = 0.5f;
     [SerializeField] private LayerMask _groundLayer; // Layer for ground detection
     private bool _isGrounded; // Is the player on the ground
     private bool _isFirst = false;
@@ -38,11 +39,12 @@ public class PlayerMove : MonoBehaviour
     private Animator _animator;
     [SerializeField] private GameObject player;
     [SerializeField] private ScoreCounter _scoreCounter;
-    [SerializeField] private FirestoreManager _fireStore;
     [SerializeField] private UIManager _uiManager;
+    private Vector2 _lastSwipeDirection = Vector2.zero;
+    private bool _actionPerformed = false; // Флаг для предотвращения повторных действий
 
     private Vector2 _startTouchPosition, _endTouchPosition, _currentSwipe; // Start position of touch for swipe detection
-    private float _minSwipeDistance = 50f;
+    private float _minSwipeDistance = 30f;
 
     private void Awake()
     {
@@ -72,7 +74,14 @@ public class PlayerMove : MonoBehaviour
         {
             // Continuous forward movement
             transform.Translate(Vector3.forward * _forwardSpeed * _speedScale * Time.deltaTime);
-
+            if (Input.GetKeyDown(KeyCode.W))
+            {
+                Jump();
+            }
+            if (Input.GetKeyDown(KeyCode.S))
+            {
+                Slide();
+            }
             // Increase speed if player has traveled more than 100 units on the Z-axis
             if (transform.position.z >= _lastZPosition + _speedIncreaseInterval)
             {
@@ -80,10 +89,8 @@ public class PlayerMove : MonoBehaviour
                 _lastZPosition = transform.position.z; // Update the last position
                 _animator.speed = 1 + _speedScale / 10;
             }
-
             // Mobile touch controls
             DetectSwipe();
-
             // Smooth movement between lanes
             Vector3 desiredPosition = new Vector3(_targetPosition.x, transform.position.y, transform.position.z);
             transform.position = Vector3.Lerp(transform.position, desiredPosition, Time.deltaTime * _laneChangeSpeed);
@@ -106,16 +113,20 @@ public class PlayerMove : MonoBehaviour
             if (touch.phase == TouchPhase.Began)
             {
                 _startTouchPosition = touch.position;
+                _actionPerformed = false; // Сброс флага в начале нового свайпа
             }
-            else if (touch.phase == TouchPhase.Ended)
+            else if (touch.phase == TouchPhase.Moved && !_actionPerformed)
             {
                 _endTouchPosition = touch.position;
-                CheckSwipe();
+                if (CheckSwipe())
+                {
+                    _actionPerformed = true; // Устанавливаем флаг, чтобы блокировать дальнейшие действия
+                }
             }
         }
     }
 
-    private void CheckSwipe()
+    private bool CheckSwipe()
     {
         float distance = Vector2.Distance(_startTouchPosition, _endTouchPosition);
         if (distance >= _minSwipeDistance)
@@ -149,17 +160,25 @@ public class PlayerMove : MonoBehaviour
                     Slide();
                 }
             }
+
+            return true; // Свайп обработан
         }
+
+        return false; // Свайп не обработан
     }
 
     private void Jump()
     {
         if (_isGrounded && _isFirst)
         {
+            _animator.SetTrigger("Jump"); 
             Debug.Log("Jumping...");
             _rb.velocity = new Vector3(_rb.velocity.x, 0, _rb.velocity.z); // Reset vertical velocity
             _rb.AddForce(Vector3.up * _jumpForce, ForceMode.Impulse);      // Apply upward impulse
-            _animator.SetTrigger("Jump");                                 // Trigger jump animation
+                                           // Trigger jump animation
+            AdjustCapsuleCollider(height: _originalHeight * 0.5f, center: new Vector3(_originalCenter.x, _originalCenter.y + 0.5f, _originalCenter.z));
+
+            Invoke(nameof(ResetCapsuleCollider), _jumpDuration);
         }
         else
         {
@@ -172,6 +191,7 @@ public class PlayerMove : MonoBehaviour
     {
         if (!_isRolling )
         {
+            _animator.SetBool("isRolling", false);
 
             _isRolling = true;
             _animator.SetTrigger("Roll");
@@ -182,6 +202,7 @@ public class PlayerMove : MonoBehaviour
             // Return to the original values after the roll
             Invoke(nameof(ResetCapsuleCollider), _rollDuration);
             _isRolling = false;
+            _animator.SetBool("isRolling", false);
         }
     }
 
@@ -189,7 +210,7 @@ public class PlayerMove : MonoBehaviour
     {
         // Ground check setup
         Vector3 rayOrigin = transform.position + Vector3.up * 0.1f; // Slightly above the center
-        float rayLength = (_capsuleCollider.height / 2f) + 0.5f;    // Ray length with a margin
+        float rayLength = (_capsuleCollider.height / 2f) + 2f;    // Ray length with a margin
         _isGrounded = Physics.Raycast(rayOrigin, Vector3.down, rayLength, _groundLayer);
 
         // Debug ray
@@ -239,7 +260,7 @@ public class PlayerMove : MonoBehaviour
             _animator.SetTrigger("hit");
             _canMove = false;
             _uiManager.Hit();
-            StartCoroutine(_fireStore.UpdateHighScore(_scoreCounter.Score));
+            StartCoroutine(FirestoreManager.instance.UpdateHighScore(_scoreCounter.Score));
             other.gameObject.SetActive(false);
         }
     }

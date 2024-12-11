@@ -3,8 +3,6 @@ using UnityEngine;
 using Firebase.Auth;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Linq;
-using System;
 using System.Collections;
 using UnityEngine.UI;
 using TMPro;
@@ -17,17 +15,22 @@ public class FirestoreManager : MonoBehaviour
     private FirebaseFirestore _firestore;
     private QuerySnapshot _snapshot;
     private int _highScore;
-    [SerializeField] private Text[] scoreArray;
-    [SerializeField] private Text[] nameArray;
-    [SerializeField] private TextMeshProUGUI _yourBestScore;
-    private string email;
-    private bool search = false;
+    public static FirestoreManager instance;
 
-    void Awake()
+    private void CreateInstance()
+    {
+        if (instance == null)
+        {
+            instance = this;
+        }
+    }
+    private void Awake()
     {
         // »нициализаци€ Firestore
         _firestore = FirebaseFirestore.DefaultInstance;
         _auth = FirebaseAuth.DefaultInstance;
+        DontDestroyOnLoad(this.gameObject);
+        CreateInstance();
     }
 
     public IEnumerator SaveUserData(string userId, string email, string login, int highScore)
@@ -115,44 +118,32 @@ public class FirestoreManager : MonoBehaviour
 
     }
 
-    public string GetEmail(string login)
+    public async Task<string> GetUserByLoginAsync(string login)
     {
-        if (!search)
-        {
-            StartCoroutine(GetUserByLogin(login));
-        }
-        return email;
-    }
-
-    private IEnumerator GetUserByLogin(string login)
-    {
-        search = true;
         Query query = _firestore.Collection("users").WhereEqualTo("login", login).Limit(1);
-        var queryTask = query.GetSnapshotAsync();
-        yield return new WaitUntil(predicate: ()  => queryTask.IsCompleted);
-        QuerySnapshot snapshots = queryTask.Result;
-        if (snapshots != null)
+        QuerySnapshot snapshots = await query.GetSnapshotAsync();
+
+        if (snapshots.Count != 0)
         {
             foreach (var doc in snapshots)
             {
-                if (doc != null)
+                if (doc != null && doc.GetValue<string>("login") == login)
                 {
-                    if (doc.GetValue<string>("login") == login)
-                    {
-                        email = doc.GetValue<string>("email");
-                        search = false;
-                    }
-
+                    return doc.GetValue<string>("email");
                 }
-                else
-                {
-                    Debug.LogError("User not found with this login.");
-                }
-            } 
+            }
         }
+
+        Debug.LogWarning("User not found with this login.");
+        return null;
     }
 
-    public IEnumerator GetTop10Leaderboard()
+    public void GetTop(Text[] name, Text[] score)
+    {
+        StartCoroutine(GetTop10Leaderboard(name, score));
+    }
+
+    private IEnumerator GetTop10Leaderboard(Text[] nameArray, Text[] scoreArray)
     {
         // «апрос на сортировку по highScore в пор€дке убывани€, ограничение до 10 записей
         Query leaderboardQuery = _firestore.Collection("users")
@@ -185,7 +176,12 @@ public class FirestoreManager : MonoBehaviour
         }
     }
 
-    public IEnumerator GetCurrentUserHighScore()
+    public void GetUserScore(TextMeshProUGUI score)
+    {
+        StartCoroutine(GetCurrentUserHighScore(score));
+    }
+
+    private IEnumerator GetCurrentUserHighScore(TextMeshProUGUI _yourBestScore)
     {
         // ѕолучаем текущего пользовател€ из Firebase Auth
         FirebaseUser user = _auth.CurrentUser;

@@ -11,8 +11,8 @@ GameObject:
   - component: {fileID: 3312070893964586207}
   - component: {fileID: 3644804325342986658}
   - component: {fileID: 1457661146075884762}
-  - component: {fileID: 5453234689597599112}
   - component: {fileID: 4649161785923034521}
+  - component: {fileID: 2015888926588237393}
   m_Layer: 6
   m_Name: Obstacle_BigRock
   m_TagString: Obstacle
@@ -86,27 +86,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &5453234689597599112
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8600354474179708069}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 2.889193, y: 1.2765025, z: 0.69488674}
-  m_Center: {x: 0.095510006, y: 0.61422867, z: -0.5381236}
 --- !u!54 &4649161785923034521
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -134,6 +113,29 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!136 &2015888926588237393
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8600354474179708069}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 1.9133677
+  m_Height: 1.2755785
+  m_Direction: 1
+  m_Center: {x: 0.025624394, y: 0.6641202, z: 0.3302226}
 --- !u!1001 &1908568085818727267
 PrefabInstance:
   m_ObjectHideFlags: 0

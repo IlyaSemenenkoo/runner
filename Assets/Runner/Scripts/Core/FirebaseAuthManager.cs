@@ -1,9 +1,9 @@
 using UnityEngine;
 using Firebase;
 using Firebase.Auth;
-using TMPro;
 using System.Collections;
 using UnityEngine.SceneManagement;
+using System.Text.RegularExpressions;
 
 
 public class FirebaseAuthManager : MonoBehaviour
@@ -13,23 +13,24 @@ public class FirebaseAuthManager : MonoBehaviour
     private FirebaseAuth auth;
     private FirebaseUser User;
     private FirestoreManager firestoreManager;
-
-    [Header("Login")]
-    [SerializeField] private TMP_InputField loginLoginField;
-    [SerializeField] private TMP_InputField passwordLoginField;
-    [SerializeField] private TMP_Text warmingLoginText;
-    [SerializeField] private TMP_Text confirmLoginText;
-
-    [Header("Register")]
-    [SerializeField] private TMP_InputField loginRegisterField;
-    [SerializeField] private TMP_InputField emailRegisterField;
-    [SerializeField] private TMP_InputField passwordRegisterField;
-    [SerializeField] private TMP_InputField passwordRegisterVerifyField;
-    [SerializeField] private TMP_Text warningRegisterText;
-
+    public static FirebaseAuthManager instance;
+    private Regex _emailPattern = new Regex(@"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$", RegexOptions.IgnoreCase);
+    private void Awake()
+    {
+        DontDestroyOnLoad(this.gameObject);
+        CreateInstance();
+    }
     private void Start()
     {
         StartCoroutine(CheckAndFixDependenciesAsync());
+    }
+
+    private void CreateInstance()
+    {
+        if (instance == null)
+        {
+            instance = this;
+        }
     }
 
     private IEnumerator CheckAndFixDependenciesAsync()
@@ -116,26 +117,28 @@ public class FirebaseAuthManager : MonoBehaviour
         if(auth != null && User != null)
         {
             auth.SignOut();
-            SceneManager.LoadScene("GameScene");
+            SceneManager.LoadScene("LoginScene");
         }
     }
 
-    public void LoginButton()
+    public void LoginButton(string login, string password)
     {
         
-        StartCoroutine(Login(loginLoginField.text, passwordLoginField.text));
+        StartCoroutine(Login(login, password));
     }
 
-    public void RegisterButton()
+    public void RegisterButton(string email, string password, string login, string passwordVerify)
     {
-        StartCoroutine(Register(emailRegisterField.text, passwordRegisterField.text, loginRegisterField.text));
+        StartCoroutine(Register(email, password, login, passwordVerify));
     }
 
     private IEnumerator Login(string login, string password)
     {
+        var getEmailTask = firestoreManager.GetUserByLoginAsync(login);
 
-        yield return new WaitUntil(predicate: () => firestoreManager.GetEmail(login)  != null);
-         var email = firestoreManager.GetEmail(login);
+        yield return new WaitUntil(predicate: () => getEmailTask.IsCompleted);
+        
+        string email = getEmailTask.Result;
 
         var LoginTask = auth.SignInWithEmailAndPasswordAsync(email, password);
         
@@ -167,31 +170,47 @@ public class FirebaseAuthManager : MonoBehaviour
                     message = "Account does not exist";
                     break;
             }
-            warmingLoginText.text = message;
+            Registration.instance.WarmingLogin(message);
         }
         else
         {
             User = LoginTask.Result.User;
             Debug.LogFormat("User signed in successfully: {0} ({1})", User.DisplayName, User.Email);
-            warmingLoginText.text = "";
-            confirmLoginText.text = "Logged In";
+            Registration.instance.WarmingLogin("");
+            Registration.instance.ConfirmLogin("Logged In");
             Registration.instance.AuthComplite();
         }
     }
 
-    private IEnumerator Register(string _email, string _password, string _username)
+    private IEnumerator Register(string _email, string _password, string _username, string _passwordVerify)
     {
+        var getEmailTask = firestoreManager.GetUserByLoginAsync(_username);
+
+        yield return new WaitUntil(predicate: () => getEmailTask.IsCompleted);
+
         if (_username == "")
         {
-            warningRegisterText.text = "Missing Username";
+            Registration.instance.WarmingReg("Missing Username");
         }
-        else if (passwordRegisterField.text != passwordRegisterVerifyField.text)
+        else if(_username.Length > 10)
         {
-            warningRegisterText.text = "Password Does Not Match!";
+            Registration.instance.WarmingReg("Login too long");
+        }
+        else if (_password != _passwordVerify)
+        {
+            Registration.instance.WarmingReg("Password Does Not Match!");
         }
         else if (_email == "")
         {
-            warningRegisterText.text = "Missing Email";
+            Registration.instance.WarmingReg("Missing Email");
+        }
+        else if(!_emailPattern.IsMatch(_email))
+        {
+            Registration.instance.WarmingReg("Invalid Email");
+        }
+        else if (getEmailTask.Result != null)
+        {
+            Registration.instance.WarmingReg("Login Already In Use");
         }
         else
         {
@@ -221,7 +240,7 @@ public class FirebaseAuthManager : MonoBehaviour
                         message = "Email Already In Use";
                         break;
                 }
-                warningRegisterText.text = message;
+                Registration.instance.WarmingReg(message);
             }
             else
             {
@@ -240,11 +259,11 @@ public class FirebaseAuthManager : MonoBehaviour
                         Debug.LogWarning(message: $"Failde to register task with {ProfileTask.Exception}");
                         FirebaseException firebaseEx = ProfileTask.Exception.GetBaseException() as FirebaseException;
                         AuthError errorCode = (AuthError)firebaseEx.ErrorCode;
-                        warningRegisterText.text = "Username Set Failde!";
+                        Registration.instance.WarmingReg("Username Set Failde!");
                     }
                     else
                     {
-                        warningRegisterText.text = "";
+                        Registration.instance.WarmingReg("");
                     }
                     Registration.instance.AuthComplite();
                     StartCoroutine(firestoreManager.SaveUserData(User.UserId, _email, _username, 0));
