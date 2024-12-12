@@ -5,3 +5,15 @@ DefaultImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+android {
+    buildTypes {
+        debug {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-user.txt'
+        }
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-user.txt'
+        }
+    }
+}

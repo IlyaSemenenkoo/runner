@@ -5,3 +5,8 @@ TextScriptImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+# Keep essential classes and methods
+-keep class com.unity3d.player.** { *; }
+-keep class com.google.** { *; }
+-dontwarn android.support.**
+-dontwarn com.google.**

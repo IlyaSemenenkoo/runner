@@ -37,8 +37,8 @@ public class UIManager : MonoBehaviour
 
     public void LeaderBoard()
     {
-        FirestoreManager.instance.GetTop(nameArray, scoreArray);
-        FirestoreManager.instance.GetUserScore(_yourBestScore);
+        FirestoreManager.Instance.GetTop(nameArray, scoreArray);
+        FirestoreManager.Instance.GetUserScore(_yourBestScore);
         _leaderBoardScreen.SetActive(true);
         _mainMenuScreen.SetActive(false); 
     }
@@ -56,7 +56,7 @@ public class UIManager : MonoBehaviour
 
     public void LogOut()
     {
-        FirebaseAuthManager.instance.Logout();
+        FirebaseAuthManager.Instance.Logout();
     }
 
     public void End()

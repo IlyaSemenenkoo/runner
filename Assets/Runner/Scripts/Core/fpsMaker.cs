@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class fpsMaker : MonoBehaviour
+public class FpsMaker : MonoBehaviour
 {
     private void Awake()
     {

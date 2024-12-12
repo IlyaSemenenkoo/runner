@@ -6,10 +6,10 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/LoginScene.unity
+    path: Assets/Runner/Scenes/LoginScene.unity
     guid: 45d5638a8a7493d4394a9485976c2e4b
   - enabled: 1
-    path: Assets/Scenes/GameScene.unity
+    path: Assets/Runner/Scenes/GameScene.unity
     guid: c850ee8c3b14cc8459e7e186857cf567
   m_configObjects:
     com.unity.adaptiveperformance.google.android.provider_settings: {fileID: 11400000,

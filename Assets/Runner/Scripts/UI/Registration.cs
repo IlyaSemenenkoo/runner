@@ -59,12 +59,12 @@ public class Registration : MonoBehaviour
 
     public void LoginButton()
     {
-        FirebaseAuthManager.instance.LoginButton(loginLoginField.text, passwordLoginField.text);
+        FirebaseAuthManager.Instance.LoginButton(loginLoginField.text, passwordLoginField.text);
     }
 
     public void RegisterButton()
     {
-        FirebaseAuthManager.instance.RegisterButton(emailRegisterField.text, passwordRegisterField.text, loginRegisterField.text, passwordRegisterVerifyField.text);
+        FirebaseAuthManager.Instance.RegisterButton(emailRegisterField.text, passwordRegisterField.text, loginRegisterField.text, passwordRegisterVerifyField.text);
     }
 
     public void Register()
