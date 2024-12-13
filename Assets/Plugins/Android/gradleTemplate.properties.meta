@@ -5,3 +5,6 @@ DefaultImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+android.suppressUnsupportedCompileSdk=33
+
+android.suppressUnsupportedCompileSdk=34
